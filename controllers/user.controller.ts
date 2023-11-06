@@ -5,6 +5,7 @@ import {CatchAsyncError} from "../middleware/catchAsyncError";
 import jwt, {Secret} from "jsonwebtoken";
 import "dotenv/config";
 import sendMail from "../utils/sendMail";
+import {sendToken} from "../utils/jwt";
 
 // register user
 interface IRegisterUser {
@@ -126,6 +127,66 @@ export const activateUser = CatchAsyncError(async (req: Request, res: Response, 
         })
 
     } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+})
+
+// login request
+
+interface ILoginRequest {
+    email: string;
+    password: string;
+}
+
+export const loginUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const {email, password} = req.body as ILoginRequest;
+        console.debug('loginUser - email', email);
+
+        // cek email & password
+        if(!email || !password) {
+            return next(new ErrorHandler("Please enter email and password", 400));
+        }
+
+        // cek user exists
+        const user = await userModel.findOne({email});
+
+        console.debug('loginUser - user', user);
+
+        if(!user) {
+            return next(new ErrorHandler("Invalid email or password", 400));
+        }
+
+        // cek password
+        const isPasswordMatch = await user.comparePassword(password);
+
+        console.debug('loginUser - isPasswordMatch', isPasswordMatch);
+
+
+        if(!isPasswordMatch) {
+            return next(new ErrorHandler("Invalid email or password", 400));
+        }
+
+        sendToken(user, 200, res);
+
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+})
+
+
+// logout user
+export const logoutUser = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try{
+        res.cookie("access_token", "", {maxAge: 1});
+        res.cookie("refresh_token", "", {maxAge: 1});
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully",
+        })
+
+
+    }catch (error: any) {
         return next(new ErrorHandler(error.message, 400));
     }
 })
