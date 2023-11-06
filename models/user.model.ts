@@ -37,11 +37,11 @@ const userSchema: Schema<IUser> = new Schema({
     avatar: {
         public_id: {
             type: String,
-            required: true,
+            required: false,
         },
         url: {
             type: String,
-            required: true,
+            required: false,
         }
     },
     role: {
@@ -60,6 +60,8 @@ const userSchema: Schema<IUser> = new Schema({
             }
         }
     ]
+}, {
+    timestamps: true
 })
 
 
